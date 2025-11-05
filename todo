@@ -1,0 +1,63 @@
+9 /22 /2025
+[X] Fix physics of hitting brick on the side or paddle on the side
+[X] change colors of the brick layers
+[X] add more flags and answers
+
+[X] implement "p" to pause and make guess 
+[X] create auto filler in country submission
+[X] change points system 
+[X] Create restart system for after game over 
+[X] Change lives and points text  
+[X] fix bug with double bricking
+[X] SFX
+    [X] Incorrect
+    [X] Correct 
+    [X] Game over (lose)
+    [X] brick break
+    [X] paddle hit 
+------------
+[X] condition if all bricks are broken
+[X] create instructions on how to play 
+[X] Outline ball and paddle  
+[X] figure out solution for spaces in the answer box
+[X] fix ball and paddle collision
+[X] fix submit button
+------------
+[X] fix issue with focussing
+[X] fix the autocompleter
+[X] change all fonts 
+[X] list controls 
+[X] do something about the winning message
+[X] update main message section
+[X] Fix game font 
+[X] Find way to visually show incorrect/correct guess
+------------
+[X] find other color than current
+[X] create an easy, medium, and hard mode
+[X] Think about making the game smaller ----
+[X] Figure out acrynyms
+------------ Style
+[X] fix flash bug
+[X] Format Title
+[X] Format left side
+[X] Add thing remembering your previous scores 
+------------
+[X] research hosting website, can github host multiple (godaddy)
+[X] research putting ads 
+------------
+[X] Add ALL flags for hard mode 
+    [X] Added most flags
+[ ] flesh out  easy and medium modes 
+    [X] show differente between easy and medium and hard mode 
+------------
+[ ] get rid of comments 
+[ ] clean code
+[ ] review all text
+------------
+[ ] Get website running
+[ ] install google analytics
+[ ] set up godaddy url name
+
+[ ] STRETCH: add upside down flags for difficulty 
+
+

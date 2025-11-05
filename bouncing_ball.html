@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+    <head>
+        <meta charset="utf-8" />
+        <title> Holy Peak </title>
+
+        <link rel="stylesheet" href="./style/main.css">
+
+    </head>
+
+    <!-- AUDIO -->
+    <audio id="hitSound" src="./audio/brick_break.wav"></audio>
+    <audio id="hitSound2" src="./audio/brick_break2.wav"></audio>
+    <audio id="hitSound3" src="./audio/brick_break3.wav"></audio>
+    <audio id="hitSound4" src="./audio/brick_break4.wav"></audio>
+    <!-- <audio id="paddleHitSound" src="./audio/paddle_hit.wav"></audio> -->
+    <audio id="paddleHitSound" src="./audio/jump3.wav"></audio>
+    <audio id="incorrectGuess" src="./audio/error_sound_2.wav"></audio>
+    <audio id="correctGuess" src="./audio/correct.wav"></audio>
+    <audio id="deathSound" src="./audio/death.wav"></audio>
+
+
+    <body>
+        <h1 class="page-header">Breakout Flag Guesser Game</h1>
+        
+        <div class="main-container">
+            <div class="controls">
+                
+                <!-- Info section -->
+                <!-- <div class="info-section">
+                    <div id="infoText" class="info-text">
+                        <p>
+                            This game is a combination of classic brick breaker and 
+                            a flag guessing game. Break bricks to reveal more 
+                            of the flag and guess the flag as soon 
+                            as possible. Your score decreases the more bricks you 
+                            reveal and the more incorrect guesses or pauses you take. 
+                        </p>
+                    </div>
+                    <button id="infoButton" class="info-button">ℹ️</button>
+                </div> -->
+                <!--  -->
+                
+                <p class="wrapped-text">
+                    This game is a combination of classic brick breaker and 
+                    a flag guessing game. Break bricks to reveal more 
+                    of the flag and guess the flag as soon 
+                    as possible. Your score decreases the more bricks you 
+                    reveal and the more incorrect guesses or pauses you take. 
+                </p>
+                <!--  -->
+
+                <h2 class="key-controls">
+                    Controls: <br class="small-break">
+                    <b class="control-info">Mouse/Arrow Keys </b>- move paddle <br>
+                    <b class="control-info">Space</b> - pause game and make guess<br>
+                    <b class="control-info">Enter </b>- submit guess<br>
+                </h2>
+
+                <!-- <button id="runButton">Start Game</button> -->
+                <!-- RUNS NORMAL BRICK BREAKER -->
+                <button id="flagButton" class="flagButton">Start Flag Guessing Game</button>
+                <!-- START FLAG GUESSING GAME BUTTON -->
+                <!-- Difficulty selection buttons -->
+                <div id="difficultyContainer" class="difficultyContainer">
+                    <button id="easy" class="difficulty-btn active" data-level="easy" 
+                    data-tooltip="Only the most recognizable flags">
+                        Easy
+                    </button>
+
+                    <button id="medium" class="difficulty-btn" data-level="medium" 
+                    data-tooltip="Common and uncommon flags">
+                        Medium
+                    </button>
+
+                    <button id="hard" class="difficulty-btn" data-level="hard" 
+                    data-tooltip="A real challenge containing most of the wold's flags">
+                        Hard
+                    </button>
+                </div>
+                <label for="name">Guess the Country:</label>
+                <!-- INPUT ANSWER -->
+                <input
+                    type="text"
+                    id="inputGuess"
+                    name="name"
+                    required
+                    minlength="2"
+                    maxlength="18"
+                    size="20"
+                    placeholder="Enter Country..."
+                    list="autoComplete"
+                    disabled = true
+                />
+                <datalist id="autoComplete"></datalist>
+
+                <button id="submitButton" 
+                        disabled = ture style="margin-bottom: 40px;">
+                        Submit
+                </button>
+                <!-- <input type="file" id="imageUpload" accept="image/*"> -->
+
+                <!-- <p  id="resultMessage" 
+                    style="display:none; 
+                    font-size:22px; 
+                    font-weight:bold; 
+                    color:#222;">
+                </p> -->
+
+                <table id="scoreTable" class="score-table" style="display:none;" > 
+                    <thead>
+                        <tr>
+                            <th>Country</th>
+                            <th>Score</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scoreTableBody">
+                        <!-- rows will be added here dynamically -->
+                    </tbody>
+                </table>
+
+            </div>
+
+            <canvas id="canva" width="1020" height="970"></canvas>
+        </div>
+        
+        <script>
+            const canvas = document.getElementById("canva");
+            const ctx = canvas.getContext("2d");
+            const ballRadius = 12; 
+
+            let uploadedImage = null; // IMAGE 
+
+            let top_speed = 4;
+            let min_x_angle = 2;
+            let loss_speed = 2.5; // speed of the ball after you lose  
+            let x = canvas.width / 2;
+            let y = canvas.height - 30; 
+            let r_x = x + ballRadius
+            let l_x = x - ballRadius
+            let t_y = y - ballRadius
+            let b_y = y + ballRadius
+            let dx = top_speed;
+            let dy = -top_speed;
+            
+            const paddleHeight = 20;
+            const paddleWidth = 175;
+            let paddleX = (canvas.width - paddleWidth) / 2;
+
+            
+            let rightPressed = false;
+            let leftPressed = false;
+            
+            const init_score = 150
+            let interval = 0; 
+            
+            const brickRowCount = 10;
+            const brickColumnCount = 12;
+            const brickHeight = 60;
+            const brickPadding = 0 ; // DETERMINES SPACE BETWEEN BRICKS 
+            const brickOffsetLeft = 0;
+            const brickOffsetTop = 10;
+            
+            let canvasMinusLength = (brickColumnCount + 1) * brickPadding; 
+            const brickWidth = (canvas.width - canvasMinusLength) / brickColumnCount;
+
+            let blocksTotalHeight = (brickRowCount * brickHeight) + (brickRowCount + 1) * brickPadding;
+            let backgroundScale = blocksTotalHeight / canvas.height;
+
+            let score = init_score; 
+            let lives = 3; 
+
+            // PUASE BUTTON THINGS
+            let isPaused = false;
+            let wasPaused = false; 
+            let isGrounded = false;
+            let pauseCountdown = 0;
+            let countdownInterval = null;
+            let groundInterval = null;
+            let is_won = false;
+            let can_space = false;
+
+
+            // test RESULT MESSAGE
+            // canvas.addEventListener('gameOver', (e) => {
+            //     const { winstate } = e.detail;
+            //     const resultMessage = document.getElementById('resultMessage');
+            //     resultMessage.textContent = winstate ? "You won!" : "You lost!";
+            //     resultMessage.style.display = "block";
+            // });
+
+            let difficultyContainer = document.getElementById("difficultyContainer");
+
+            // TABLE
+            const scoreTableBody = document.getElementById("scoreTableBody");
+            let pastScores = [];  // stores { countryName, score }
+
+            // Call this when the game ends
+            function addScore(countryName, score) {
+                // if (scoreTableBody.style.display == "none") {
+                scoreTable.style.display = "table";
+                // }
+
+                // Add new score
+                pastScores.push({ countryName, score });
+
+                // Sort descending by score
+                pastScores.sort((a, b) => b.score - a.score);
+
+                // Clear table
+                scoreTableBody.innerHTML = "";
+
+                // Repopulate
+                pastScores.forEach(entry => {
+                    const row = document.createElement("tr");
+
+                    const countryCell = document.createElement("td");
+                    countryCell.textContent = entry.countryName;
+
+                    const scoreCell = document.createElement("td");
+                    scoreCell.textContent = entry.score;
+
+                    row.appendChild(countryCell);
+                    row.appendChild(scoreCell);
+
+                    scoreTableBody.appendChild(row);
+                });
+            }
+            //
+
+
+            // --- GET DRAWING - upload image feature ---
+                // document.getElementById("imageUpload").addEventListener("change", function(event) {
+                //     const file = event.target.files[0];
+                //     if (file) {
+                //         const img = new Image();
+                //         img.onload = function () {
+                //             uploadedImage = img;
+                //             startGame(); // start only after the image is loaded
+                //         };
+                //         img.src = URL.createObjectURL(file);
+                //     }
+                // });
+            // --- ---
+
+            let bricks = [];
+            for (let c = 0; c < brickColumnCount; c ++) {
+                bricks[c] = []; 
+                for (let r = 0; r < brickRowCount; r++) {
+                    bricks[c][r] = { x: 0, y: 0, status: 1}
+                }
+            }
+
+
+            function drawBricks() {
+                // let color_array = ["#e35742",
+                //                     "#e39c4f",
+                //                     "#f5e478",
+                //                     "#6dc971",
+                //                     "#76c0d6"
+                //                 ]
+                let color_array = ["#e35742",
+                                    "#f5e478",
+                                    "#e39c4f",
+                                    "#6dc971",
+                                    "#76c0d6"
+                                ]
+
+                for (let c = 0; c < brickColumnCount; c++) {
+                    for (let r = 0; r < brickRowCount; r++) {
+                        if (bricks[c][r].status === 1) {
+                            let brickX = c * (brickWidth + brickPadding) + brickOffsetLeft;
+                            let brickY = r * (brickHeight + brickPadding) + brickOffsetTop + 80;
+                            bricks[c][r].x = brickX;
+                            bricks[c][r].y = brickY;
+                            ctx.beginPath();
+                            ctx.rect(brickX, brickY, brickWidth, brickHeight);
+                            if (r === 0 || r === 1) {
+                                ctx.fillStyle = color_array[0];
+                            } 
+                            if (r === 2 || r ===3) {
+                                ctx.fillStyle = color_array[1];
+                            } 
+                            if (r === 4 || r ===5) {
+                                ctx.fillStyle = color_array[2];
+                            } 
+                            if (r === 6 || r ===7) {
+                                ctx.fillStyle = color_array[3];
+                            } 
+                            if (r === 8 || r ===9) {
+                                ctx.fillStyle = color_array[4];
+                            } 
+                            ctx.fill();
+                            ctx.closePath();
+                        }
+                    }
+                }
+            }
+
+            function drawBall() {
+                ctx.beginPath();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = "#black";
+                ctx.arc(x, y, ballRadius, Math.PI * 2, false);
+                ctx.fillStyle = "#0095DD";
+                ctx.fill();
+                ctx.stroke();
+                ctx.closePath();
+            }
+
+            function drawPaddle() {
+                ctx.beginPath();
+
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = "#black";
+
+                ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight); 
+                ctx.fillStyle = "#0095DD";
+                ctx.fill(); 
+                ctx.stroke();
+                ctx.closePath();
+            }
+
+            function drawScore() {
+                ctx.font = "30px Monospace";
+                ctx.fillStyle = "#0095DD";
+                ctx.fillText(`Score: ${score}`, 8, 40);
+            }
+
+            function drawLives() {
+                ctx.font = "30px Monospace";
+                ctx.fillStyle = "#0095DD";
+                ctx.fillText(`Lives: ${lives}`, canvas.width - 150, 40);
+            }
+
+            function drawDeath(winstate) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawBackgroundImage();
+                drawLives();
+                drawScore();
+
+                let message = "";
+                if (!winstate) {
+                    message = "GAME OVER";
+                    deathSound.play();
+                    addScore(c_name, 0);
+                } else {
+                    message = "CORRECT";
+                    addScore(c_name, score);
+                }
+                ctx.font = "64px Calibri";
+                ctx.fillStyle = "#000000";
+                const textMetrics = ctx.measureText(message);
+                const textWidth = textMetrics.width;
+                ctx.fillText(message, (canvas.width - textWidth) / 2, (canvas.height / 3 + 50) * 2);
+
+                ctx.font = "34px Calibri";
+                ctx.fillStyle = "#000000";
+                const subTextWidth = ctx.measureText(c_name).width;
+                ctx.fillText(c_name, (canvas.width - subTextWidth) / 2, (canvas.height / 3) * 2 + 140);
+
+                const event = new CustomEvent('gameOver', { detail: { winstate } });
+                canvas.dispatchEvent(event);
+
+                isNotStopped = false;
+
+                //
+                inputText.disabled = true; 
+                flagRunButton.disabled = false;
+                difficultyContainer.disabled = false;
+                flagRunButton.innerText  = 'Restart Flag Guessing Game'
+                submitButton.disabled = true;
+                //
+
+            }
+
+            function resetGame() {
+                // Reset global state variables
+                lives = 3;
+                score = init_score;
+                isPaused = false;
+                isNotStopped = true;
+                winstate = false;
+
+                // Reset paddle and ball
+                x = canvas.width / 2;
+                y = canvas.height - 30;
+                dx = loss_speed;
+                dy = -loss_speed;
+                paddleX = (canvas.width - paddleWidth) / 2;
+
+                // Reset brick statuses
+                for (let c = 0; c < brickColumnCount; c++) {
+                    for (let r = 0; r < brickRowCount; r++) {
+                        bricks[c][r].status = 1;
+                    }
+                }
+
+                inputText.disabled = false; 
+                inputText.value = "";
+            }
+
+            function scaleNumber(value, inMin, inMax, outMin, outMax) {
+                return ((value - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
+            }
+
+            // AUDIO //
+            const hitSounds = [
+                document.getElementById('hitSound'),
+                document.getElementById('hitSound2'),
+                document.getElementById('hitSound3'),
+                document.getElementById('hitSound4')
+            ];
+            const paddleSound = document.getElementById('paddleHitSound')
+            const errorSound = document.getElementById('incorrectGuess')
+            const correctSound = document.getElementById('correctGuess')
+            const deathSound = document.getElementById('deathSound')
+
+            function playRandomHitSound() {
+                const sound = hitSounds[Math.floor(Math.random() * hitSounds.length)];
+                sound.currentTime = 0;
+                sound.play();
+            }
+
+            function playPaddleHitSound() {
+                paddleSound.play()
+                paddleSound.currentTime = 0;
+            }
+
+            function playGuessSound(guess) {
+                if (guess) {
+                    correctSound.play();
+                    correctSound.currentTime = 0;
+                } else {
+                    errorSound.play();
+                    errorSound.currentTime = 0;
+                }
+            }
+
+            // AUDIO //
+
+            function hitPaddle(paddleX, ballX)  {
+                playPaddleHitSound();  
+
+                let paddleCenter = paddleX + (paddleWidth / 2);
+                let paddleQuarter = paddleWidth / 4;
+
+                if (ballX > paddleCenter - paddleQuarter && ballX < paddleCenter + paddleQuarter) {
+                    let dist = Math.abs(paddleCenter - ballX);
+                    newdx = scaleNumber( paddleCenter + dist, paddleCenter, paddleCenter + paddleQuarter, 0, top_speed);
+                    newdy = top_speed;
+
+                } else {
+                    let dist = 0;
+                    if (ballX > paddleCenter) {
+                        dist = ballX - paddleCenter - paddleQuarter ;
+                    } else {
+                        dist = ballX - paddleX;
+                    }
+
+                    newdy = scaleNumber( paddleX + dist, paddleX, paddleX + paddleQuarter, min_x_angle, top_speed);
+                    newdx = top_speed;
+                }
+
+                // direction change
+                if (ballX > paddleCenter) { 
+                    newdx = Math.abs(newdx);
+                } else {
+                    newdx = -newdx;
+                }
+                newdy = -Math.abs(newdy);
+
+                score -= 1
+
+                return [newdx, newdy]
+            }             
+
+            function findAngle(curr_paddleX, x) {
+                let paddleCenter = curr_paddleX + paddleWidth / 2;
+                let relativeHit = (x - paddleCenter) / (paddleWidth / 2);
+
+                let dx = scale(relativeHit, -1, 1, -2, 2);
+
+                let dy = 2;
+
+                let speed = Math.sqrt(dx * dx + dy * dy);
+                let desiredSpeed = Math.sqrt(2 * 2 + 2 * 2); // original perceived speed
+                dx = dx * (desiredSpeed / speed);
+                dy = dy * (desiredSpeed / speed);
+
+                return [dx, dy]
+            }
+
+            function drawBackgroundImage() {
+                if (!uploadedImage) return;
+                // Get the original image size
+                const originalWidth = uploadedImage.width;
+                const originalHeight = uploadedImage.height;
+
+                const drawHeight = blocksTotalHeight;
+                const heightScale = blocksTotalHeight / originalHeight
+                const drawWidth = originalWidth * heightScale;
+
+                const offsetX = (canvas.width - drawWidth) / 2;
+                // const offsetY = (canvas.height - drawHeight) / 2;
+                const offsetY = bricks[0][0].y;
+
+                const yCutoff = bricks[0][brickRowCount - 1].y + brickHeight; // <--- the max y you want to allow drawing
+                ctx.save(); // save the current drawing state
+                ctx.beginPath();
+                ctx.rect(0, 0, canvas.width, yCutoff);
+                ctx.clip();
+
+                // Draw image — anything outside the rect won't show
+                ctx.drawImage(uploadedImage, offsetX, offsetY, drawWidth, drawHeight);
+
+                ctx.restore(); 
+            }
+
+            let isNotStopped = true
+
+            function draw() {
+                // ### PAUSE CODE
+                if (!lives) return;
+                if (!isNotStopped) return; 
+
+                if (isPaused) {
+                    wasPaused = true;
+
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    drawBackgroundImage();
+                    drawBricks();
+                    drawPaddle();
+                    drawScore();
+                    drawLives();
+                    
+                    // Draw countdown text
+                    ctx.font = "64px Monospace";
+                    ctx.fillStyle = "#0095DD";
+                    ctx.fillText(`Paused: ${pauseCountdown}`, canvas.width / 2 - 120, canvas.height / 2);
+                    
+                    requestAnimationFrame(draw);
+                    return;
+                }
+                if (wasPaused) {
+                    inputText.value = "";
+                    wasPaused = false 
+                    inputGuess.blur()
+                }
+                // ### PAUSE CODE
+                // ### GROUNDED CODE
+                if (isGrounded) {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    drawBackgroundImage();
+                    drawBall();
+                    drawBricks();
+                    drawPaddle();
+                    drawScore();
+                    drawLives(); 
+                    requestAnimationFrame(draw);
+                    return;
+                }
+
+                can_space = false;
+                // submitButton.disabled = false; 
+
+                //drwaing code
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawBackgroundImage()
+                drawBricks();
+                drawBall()
+                x += dx ;
+                y += dy ; 
+                r_x = x + ballRadius ;
+                l_x = x - ballRadius ; 
+                b_y = y + ballRadius ;
+                t_y = y - ballRadius ; 
+
+                // starting
+                if (y + dy - ballRadius < 0 ) {
+                    dy = -dy;
+
+                // reaching floor level  
+                } else if (y + dy + ballRadius> canvas.height - paddleHeight + 5 &&
+                    x + ballRadius >= paddleX && x - ballRadius <= paddleX + paddleWidth) {
+                        // hitting floor
+                        res = hitPaddle(paddleX , x);
+                        dx = res[0];
+                        dy = res[1];
+                    
+                } else if (y + dy + ballRadius> canvas.height) {
+                        // hitting floor
+                        lives--;
+                        if (!lives) {
+                            drawDeath(false)
+                            is_won = false
+                        } else {
+                            groundBall(1);
+                            x = canvas.width / 2;
+                            y = canvas.height - 30;
+                            dx = loss_speed;
+                            dy = -loss_speed;
+                            paddleX = (canvas.width - paddleWidth) / 2
+                        }
+                    }
+                
+
+                if (x + dx + ballRadius > canvas.width || x + dx - ballRadius < 0) {
+                    dx = -dx;
+                    playPaddleHitSound();
+                }
+
+                if (rightPressed) {
+                    paddleX = Math.min(paddleX += 7, canvas.width - paddleWidth) ; 
+                } else if (leftPressed) {
+                    paddleX = Math.max(paddleX -= 7, 0) ; 
+                }
+
+                drawPaddle();
+                collision_detection();
+                drawScore();
+                drawLives();
+                requestAnimationFrame(draw);
+            }
+
+
+            function startGame() {
+                document.addEventListener("keydown", keyDownHandler, false);
+                document.addEventListener("keyup", keyUpHandler, false);
+                document.addEventListener("mousemove", mouseMoveHandler, false )
+                draw(); 
+            }
+
+            // ## PAUSE FUNCTION
+            function pauseGameWithCountdown(seconds) {
+                if (isPaused) return; // prevent stacking pauses
+                isPaused = true;
+                pauseCountdown = seconds;
+
+                const inputGuess = document.getElementById("inputGuess");
+                if (inputGuess) {
+                    inputGuess.focus();
+                }
+
+                clearInterval(countdownInterval);
+                countdownInterval = setInterval(() => {
+                    pauseCountdown--;
+                    if (pauseCountdown <= 0) {
+                        clearInterval(countdownInterval);
+                        isPaused = false;
+
+                        score -= 5;
+                    }
+                }, 1000);
+            }
+            // ## PAUSE FUNCTION
+
+            function groundBall(seconds) {
+                if (isGrounded) return; // prevent stacking pauses
+                isGrounded = true;
+                Countdown = seconds;
+
+                deathSound.play()
+
+                    clearInterval(groundInterval);   // ✅ clear only THIS timer
+                    groundInterval = setInterval(() => {
+                        Countdown--;
+                        if (Countdown <= 0) {
+                            clearInterval(groundInterval);
+                            groundInterval = null;
+
+                            isGrounded = false;
+                            score -= 5;
+                        }
+                    }, 1000);
+                }
+
+
+            function keyDownHandler(e) {
+                    if (e.key === "Right" || e.key === "ArrowRight") {
+                        rightPressed = true; 
+                    } else if (e.key === "Left" || e.key === "ArrowLeft") {
+                        leftPressed = true;
+                    }
+                    if (e.code === "Space") pauseGameWithCountdown(5);
+                
+                    if (!can_space) {
+                        if (e.key === " ") e.preventDefault();
+                        can_space = true;
+                    }
+                
+            }
+
+
+            function keyUpHandler(e) {
+                    if (e.key === "Right" || e.key === "ArrowRight") {
+                        rightPressed = false;
+                    } else if (e.key === "Left" || e.key === "ArrowLeft") {
+                        leftPressed = false;
+                    }
+            }
+
+
+            function mouseMoveHandler(e) {
+                const relativeX = e.clientX - canvas.offsetLeft;
+                if (relativeX > 0 && relativeX < canvas.width) {
+                    paddleX = relativeX - paddleWidth/2
+                }
+            }
+
+
+            function collision_detection() {
+                for (let c = 0;c < brickColumnCount; c++) {
+                    for (let r = 0; r < brickRowCount; r++) {
+                        const b = bricks[c][r];
+                        if (b.status ===1) {
+                            
+                            if (t_y < (b.y + brickHeight) && b_y > b.y) {
+                                if (r_x > b.x && l_x < (b.x + brickWidth)) {
+
+                                    if (y < b.y || y > b.y + brickHeight) { 
+                                        dy = -dy;
+                                    }
+                                    else {
+                                        dx = -dx;
+                                    }
+                                    b.status = 0
+
+                                    playRandomHitSound();
+
+                                    // score -= 1
+                                    return
+                                }
+                            }
+                        }
+
+                    }
+                }
+                // TODO: Flawed system
+                if (score <= init_score - brickColumnCount * brickRowCount) {
+                    for (let c = 0;c < brickColumnCount; c++) {
+                        for (let r = 0; r < brickRowCount; r++) {
+                            if (bricks[c][r].status === 1) {
+                                return
+                            } 
+                        }
+                    }
+                    // win from breaking all brickss
+                    drawDeath(true)
+                }
+            }
+
+            // FOR THE RUN BUTTON FOR NORMAL BRICK BREAKER
+            // const RunButton = document.getElementById("runButton")
+            // RunButton.addEventListener("click", () => {
+            //     startGame();
+            //     // x = canvas.width / 2;
+            //     // y = canvas.height - 30; 
+            //     runButton.disabled = true; 
+            // })
+            
+            
+            let countriesListEasy = [
+                'China', 'Brazil', 'Germany', 'South Korea', 'USA', 'UK', 
+                'India', 'Russia', 'Ukraine', 'Nepal', 'Japan', 'Mexico',
+                'Argentina', 'Australia', 'Denmark', 'Egypt', 'France',
+                'Greece', 'Italy', 'Kenya', 'Scotland',
+                'South Africa', 'Spain', 'Sweden', 'Switzerland', 'Taiwan', 'Turkey',
+                'Canada', 'Nigeria','England',
+                'Norway', 'Pakistan',  
+                'Peru', 'Hong Kong',
+            ];
+            let countriesListMedium = [
+                'China', 'Brazil', 'Germany', 'South Korea', 'USA', 'UK', 
+                'India', 'Russia', 'Ukraine', 'Nepal', 'Japan', 'Mexico',
+                'Argentina', 'Australia', 'Denmark', 'Egypt', 'Finland', 'France',
+                'Greece', 'Indonesia', 'Italy', 'Kenya', 'Poland', 'Scotland',
+                'South Africa', 'Spain', 'Sweden', 'Switzerland', 'Taiwan', 'Turkey',
+                'Vietnam', 'Canada', 'Nigeria','Bangladesh','Philippines','England',
+                'Norway', 'Vatican City', 'Pakistan', 
+                'Cuba', 'Peru', 'Hong Kong', 'Isreal', 'Ethiopia', 'Columbia', 'North Korea',
+                'Ireland', 'Netherlands', 'Portugal', 'Singapore','Puerto Rico', 'Wales'
+
+            ];
+            let countriesList = [
+                'China', 'Brazil', 'Germany', 'South Korea', 'USA', 'UK', 
+                'India', 'Russia', 'Ukraine', 'Nepal', 'Japan', 'Mexico',
+                'Argentina', 'Australia', 'Denmark', 'Egypt', 'Finland', 'France',
+                'Greece', 'Indonesia', 'Italy', 'Kenya', 'Poland', 'Scotland',
+                'South Africa', 'Spain', 'Sweden', 'Switzerland', 'Taiwan', 'Turkey',
+                'Vietnam', 'Canada', 'Nigeria','Bangladesh','Philippines','England',
+                'Norway', 'Vatican City', 'Pakistan', 'Republic of Congo', 'Iran', 'Malaysia',
+                'Cuba', 'Peru', 'Hong Kong', 'Isreal',
+                'Ethiopia', 'Tanzania', 'Columbia', 'Algeria', 'Uganda', 'Sudan',
+                'Afghanistan', 'Saudi Arabia', 'North Korea', 'Venezuela', 'Greenland',
+                'Ireland', 'Romania', 
+                'Myanmar', 'Morocco', 'Iraq', 'Uzbekistan', 'Yemen', 'Ghana',
+                'Mozambique', 'Madagascar', 'Cameroon', "Cote d'Ivoire", 'Sri Lanka',
+                'Burkina Faso', 'Syria', 'Niger', 'Chile', 'Netherlands', 'Portugal',
+                'Somalia', 'Rwanda', 'Hungary', 'Serbia', 'Singapore', 'Costa Rica',
+                'Mongolia', 'New Zealand', 'Jamaica', 'Haiti', 'El Salvador',
+                'Angola', 'Belgium', 'Austria', 'Puerto Rico', 'Wales'
+            ];
+            const jpgCountriesList = [
+                'Argentina', 'Australia', 'Scotland', 'England', 'Bangladesh', 'Hong Kong',
+                'Afghanistan', 'Greenland', 
+                'Angola', 'Belgium', 'Austria', 'Puerto Rico', 'Wales'
+            ];
+            const acronymList = {
+                usa: "United States",
+                uk: "United Kingdom",
+            };
+            const acronymListList = ["United States", "United Kingdom"]
+
+            let selected_difficulty_list = countriesListEasy;
+            
+            const difficultyButtons = document.querySelectorAll(".difficulty-btn");
+            let selectedDifficulty = null;
+            difficultyButtons.forEach(btn => {
+                btn.addEventListener("click", () => {
+                    // Remove active from all
+                    difficultyButtons.forEach(b => b.classList.remove("active"));
+                    // Add active to clicked one
+                    btn.classList.add("active");
+                    // Save difficulty
+                    selectedDifficulty = btn.dataset.level;
+                    console.log("Difficulty selected:", selectedDifficulty);
+
+                    if (selectedDifficulty === "easy") {
+                        selected_difficulty_list = countriesListEasy
+                    } else if (selectedDifficulty === "medium") {
+                        selected_difficulty_list = countriesListMedium
+                    } else if (selectedDifficulty === "hard") {
+                        selected_difficulty_list = countriesList
+                    }
+                    console.log(selected_difficulty_list)
+                });
+            });
+
+            let c_name = ''
+            function pickRandomImage() {
+                const randomIndex = Math.floor(Math.random() * selected_difficulty_list.length);
+                const countryName = selected_difficulty_list[randomIndex];
+                c_name = countryName
+                if (jpgCountriesList.includes(countryName)) {
+                    return `flag_images/${countryName}.jpg`
+                }
+                return `flag_images/${countryName}.png`
+            }
+            
+
+            const flagRunButton = document.getElementById("flagButton");
+            flagRunButton.addEventListener("click", () => {
+                flagRunButton.disabled = true;
+                difficultyContainer.disabled = true;
+                resetGame();
+
+                const randomImagePath = pickRandomImage();
+                const img = new Image();
+                
+                img.onload = function () {
+                    uploadedImage = img;
+                    startGame(); 
+                };
+
+                img.onerror = function() {
+                    console.error("Image failed to load");
+                    flagRunButton.disabled = false;
+                    difficultyContainer.disabled = false;
+                };
+
+                img.src = randomImagePath; // triggers loading
+            })
+
+
+            const inputText = document.getElementById('inputGuess');
+            inputText.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") checkAnswer();
+            });
+
+            const submitButton = document.getElementById('submitButton');
+            submitButton.addEventListener("click", () => {
+                checkAnswer()
+            })
+                       
+            
+            function checkAnswer() {
+                const guess = inputText.value.trim().toLowerCase();
+
+                // REMOVE ALL CLASSES
+                inputText.className = "";
+                void inputText.offsetWidth;
+
+
+                const correctName = c_name.toLowerCase();
+                let isCorrect = (guess === correctName);
+                if (!isCorrect) {
+                    console.log('loop')
+                    for (const acronym in acronymList) {
+                        if (guess === acronymList[acronym].toLowerCase() && 
+                        acronym === correctName)
+                        {
+                            isCorrect = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (isCorrect) {
+                    console.log("CORRECT");
+
+                    inputText.classList.add("correct-flash");
+
+                    drawDeath(true);
+                    is_won = true;
+                    isNotStopped = false;
+                    playGuessSound(true);
+                    return;
+                }
+
+                console.log("INCORRECT");
+                inputText.classList.add("incorrect-flash");
+                score -= 5;
+                playGuessSound(false);
+            }
+
+            const datalist = document.getElementById("autoComplete");
+            // datalist.innerHTML = "";
+            inputText.addEventListener("input", () => {  
+                const value = inputText.value.trim();
+                
+                datalist.innerHTML = ""; // clear old suggestions
+                
+                if (value.length >= 1) {
+                    submitButton.disabled = false
+                    countriesList.forEach(country => {
+                        if (country.toLowerCase().startsWith(value.toLowerCase())) {
+                            const option = document.createElement("option");
+                            option.value = country;
+                            datalist.appendChild(option);
+                        }
+                    });
+                    // acronymListList
+                    acronymListList.forEach(country => {
+                        if (country.toLowerCase().startsWith(value.toLowerCase())) {
+                            const option = document.createElement("option");
+                            option.value = country;
+                            datalist.appendChild(option);
+                        }
+                    });
+                    
+                }
+                else {
+                    submitButton.disabled = true 
+                }
+            });
+
+            function disableDifficultyButtons(bool) {
+                let easy = document.getElementById('easy');
+                let medium = document.getElementById('medium');
+                let hard = document.getElementById('hard');
+            }
+              
+
+        
+        </script>
+    </body>
+</html>
