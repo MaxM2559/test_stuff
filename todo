@@ -47,12 +47,13 @@
 ------------
 [X] Add ALL flags for hard mode 
     [X] Added most flags
-[ ] flesh out  easy and medium modes 
+[X] flesh out  easy and medium modes 
     [X] show differente between easy and medium and hard mode 
 ------------
-[ ] get rid of comments 
-[ ] clean code
+[X] get rid of comments 
+[X] clean code
 [ ] review all text
+[X] color arrangement?
 ------------
 [ ] Get website running
 [ ] install google analytics

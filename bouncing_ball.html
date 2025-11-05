@@ -26,30 +26,13 @@
         
         <div class="main-container">
             <div class="controls">
-                
-                <!-- Info section -->
-                <!-- <div class="info-section">
-                    <div id="infoText" class="info-text">
-                        <p>
-                            This game is a combination of classic brick breaker and 
-                            a flag guessing game. Break bricks to reveal more 
-                            of the flag and guess the flag as soon 
-                            as possible. Your score decreases the more bricks you 
-                            reveal and the more incorrect guesses or pauses you take. 
-                        </p>
-                    </div>
-                    <button id="infoButton" class="info-button">ℹ️</button>
-                </div> -->
-                <!--  -->
-                
                 <p class="wrapped-text">
                     This game is a combination of classic brick breaker and 
                     a flag guessing game. Break bricks to reveal more 
                     of the flag and guess the flag as soon 
-                    as possible. Your score decreases the more bricks you 
-                    reveal and the more incorrect guesses or pauses you take. 
+                    as possible. Your score decreases everytime you pause the game, hit the paddle,
+                    or make an incorrect guess.                                                                                                                                                                                                                                                                                                                                                        
                 </p>
-                <!--  -->
 
                 <h2 class="key-controls">
                     Controls: <br class="small-break">
@@ -58,11 +41,9 @@
                     <b class="control-info">Enter </b>- submit guess<br>
                 </h2>
 
-                <!-- <button id="runButton">Start Game</button> -->
-                <!-- RUNS NORMAL BRICK BREAKER -->
+
                 <button id="flagButton" class="flagButton">Start Flag Guessing Game</button>
-                <!-- START FLAG GUESSING GAME BUTTON -->
-                <!-- Difficulty selection buttons -->
+
                 <div id="difficultyContainer" class="difficultyContainer">
                     <button id="easy" class="difficulty-btn active" data-level="easy" 
                     data-tooltip="Only the most recognizable flags">
@@ -99,14 +80,6 @@
                         disabled = ture style="margin-bottom: 40px;">
                         Submit
                 </button>
-                <!-- <input type="file" id="imageUpload" accept="image/*"> -->
-
-                <!-- <p  id="resultMessage" 
-                    style="display:none; 
-                    font-size:22px; 
-                    font-weight:bold; 
-                    color:#222;">
-                </p> -->
 
                 <table id="scoreTable" class="score-table" style="display:none;" > 
                     <thead>
@@ -116,7 +89,6 @@
                         </tr>
                     </thead>
                     <tbody id="scoreTableBody">
-                        <!-- rows will be added here dynamically -->
                     </tbody>
                 </table>
 
@@ -182,36 +154,19 @@
             let can_space = false;
 
 
-            // test RESULT MESSAGE
-            // canvas.addEventListener('gameOver', (e) => {
-            //     const { winstate } = e.detail;
-            //     const resultMessage = document.getElementById('resultMessage');
-            //     resultMessage.textContent = winstate ? "You won!" : "You lost!";
-            //     resultMessage.style.display = "block";
-            // });
-
             let difficultyContainer = document.getElementById("difficultyContainer");
 
             // TABLE
             const scoreTableBody = document.getElementById("scoreTableBody");
             let pastScores = [];  // stores { countryName, score }
 
-            // Call this when the game ends
             function addScore(countryName, score) {
-                // if (scoreTableBody.style.display == "none") {
                 scoreTable.style.display = "table";
-                // }
-
-                // Add new score
                 pastScores.push({ countryName, score });
-
-                // Sort descending by score
                 pastScores.sort((a, b) => b.score - a.score);
 
-                // Clear table
                 scoreTableBody.innerHTML = "";
 
-                // Repopulate
                 pastScores.forEach(entry => {
                     const row = document.createElement("tr");
 
@@ -227,22 +182,6 @@
                     scoreTableBody.appendChild(row);
                 });
             }
-            //
-
-
-            // --- GET DRAWING - upload image feature ---
-                // document.getElementById("imageUpload").addEventListener("change", function(event) {
-                //     const file = event.target.files[0];
-                //     if (file) {
-                //         const img = new Image();
-                //         img.onload = function () {
-                //             uploadedImage = img;
-                //             startGame(); // start only after the image is loaded
-                //         };
-                //         img.src = URL.createObjectURL(file);
-                //     }
-                // });
-            // --- ---
 
             let bricks = [];
             for (let c = 0; c < brickColumnCount; c ++) {
@@ -254,15 +193,10 @@
 
 
             function drawBricks() {
-                // let color_array = ["#e35742",
-                //                     "#e39c4f",
-                //                     "#f5e478",
-                //                     "#6dc971",
-                //                     "#76c0d6"
-                //                 ]
+
                 let color_array = ["#e35742",
-                                    "#f5e478",
                                     "#e39c4f",
+                                    "#f5e478",
                                     "#6dc971",
                                     "#76c0d6"
                                 ]
@@ -563,7 +497,6 @@
                 }
 
                 can_space = false;
-                // submitButton.disabled = false; 
 
                 //drwaing code
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -657,13 +590,13 @@
             // ## PAUSE FUNCTION
 
             function groundBall(seconds) {
-                if (isGrounded) return; // prevent stacking pauses
+                if (isGrounded) return; 
                 isGrounded = true;
                 Countdown = seconds;
 
                 deathSound.play()
 
-                    clearInterval(groundInterval);   // ✅ clear only THIS timer
+                    clearInterval(groundInterval); 
                     groundInterval = setInterval(() => {
                         Countdown--;
                         if (Countdown <= 0) {
@@ -692,7 +625,6 @@
                 
             }
 
-
             function keyUpHandler(e) {
                     if (e.key === "Right" || e.key === "ArrowRight") {
                         rightPressed = false;
@@ -701,14 +633,12 @@
                     }
             }
 
-
             function mouseMoveHandler(e) {
                 const relativeX = e.clientX - canvas.offsetLeft;
                 if (relativeX > 0 && relativeX < canvas.width) {
                     paddleX = relativeX - paddleWidth/2
                 }
             }
-
 
             function collision_detection() {
                 for (let c = 0;c < brickColumnCount; c++) {
@@ -729,7 +659,6 @@
 
                                     playRandomHitSound();
 
-                                    // score -= 1
                                     return
                                 }
                             }
@@ -746,19 +675,9 @@
                             } 
                         }
                     }
-                    // win from breaking all brickss
                     drawDeath(true)
                 }
             }
-
-            // FOR THE RUN BUTTON FOR NORMAL BRICK BREAKER
-            // const RunButton = document.getElementById("runButton")
-            // RunButton.addEventListener("click", () => {
-            //     startGame();
-            //     // x = canvas.width / 2;
-            //     // y = canvas.height - 30; 
-            //     runButton.disabled = true; 
-            // })
             
             
             let countriesListEasy = [
@@ -926,11 +845,10 @@
             }
 
             const datalist = document.getElementById("autoComplete");
-            // datalist.innerHTML = "";
             inputText.addEventListener("input", () => {  
                 const value = inputText.value.trim();
                 
-                datalist.innerHTML = ""; // clear old suggestions
+                datalist.innerHTML = ""; 
                 
                 if (value.length >= 1) {
                     submitButton.disabled = false
@@ -941,7 +859,6 @@
                             datalist.appendChild(option);
                         }
                     });
-                    // acronymListList
                     acronymListList.forEach(country => {
                         if (country.toLowerCase().startsWith(value.toLowerCase())) {
                             const option = document.createElement("option");
@@ -962,8 +879,6 @@
                 let hard = document.getElementById('hard');
             }
               
-
-        
         </script>
     </body>
 </html>
