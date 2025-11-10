@@ -3,7 +3,7 @@
 
     <head>
         <meta charset="utf-8" />
-        <title> Holy Peak </title>
+        <title> Blck Brk Flg Guess </title>
 
         <link rel="stylesheet" href="./style/main.css">
 
@@ -22,12 +22,12 @@
 
 
     <body>
-        <h1 class="page-header">Breakout Flag Guesser Game</h1>
+        <h1 class="page-header">Block Breaker Flag Guesser Game</h1>
         
         <div class="main-container">
             <div class="controls">
                 <p class="wrapped-text">
-                    This game is a combination of classic brick breaker and 
+                    This game is a combination of classic Atari "Breakout" and 
                     a flag guessing game. Break bricks to reveal more 
                     of the flag and guess the flag as soon 
                     as possible. Your score decreases everytime you pause the game, hit the paddle,
@@ -156,9 +156,14 @@
 
             let difficultyContainer = document.getElementById("difficultyContainer");
 
+            
             // TABLE
             const scoreTableBody = document.getElementById("scoreTableBody");
             let pastScores = [];  // stores { countryName, score }
+            
+            // DELTA
+            let lastTime = 0;
+            const speedFactor = 100;
 
             function addScore(countryName, score) {
                 scoreTable.style.display = "table";
@@ -454,7 +459,13 @@
 
             let isNotStopped = true
 
-            function draw() {
+            function draw(timestamp) {
+
+                // Time based movement 
+                if (!lastTime) lastTime = timestamp;
+                const delta = (timestamp - lastTime) / 1000; // seconds since last frame
+                lastTime = timestamp;
+
                 // ### PAUSE CODE
                 if (!lives) return;
                 if (!isNotStopped) return; 
@@ -503,8 +514,8 @@
                 drawBackgroundImage()
                 drawBricks();
                 drawBall()
-                x += dx ;
-                y += dy ; 
+                x += dx  * delta * speedFactor;
+                y += dy  * delta * speedFactor;
                 r_x = x + ballRadius ;
                 l_x = x - ballRadius ; 
                 b_y = y + ballRadius ;
@@ -562,7 +573,7 @@
                 document.addEventListener("keydown", keyDownHandler, false);
                 document.addEventListener("keyup", keyUpHandler, false);
                 document.addEventListener("mousemove", mouseMoveHandler, false )
-                draw(); 
+                draw(lastTime); 
             }
 
             // ## PAUSE FUNCTION
