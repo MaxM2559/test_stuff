@@ -765,7 +765,6 @@
                     btn.classList.add("active");
                     // Save difficulty
                     selectedDifficulty = btn.dataset.level;
-                    console.log("Difficulty selected:", selectedDifficulty);
 
                     if (selectedDifficulty === "easy") {
                         selected_difficulty_list = countriesListEasy
@@ -774,7 +773,6 @@
                     } else if (selectedDifficulty === "hard") {
                         selected_difficulty_list = countriesList
                     }
-                    console.log(selected_difficulty_list)
                 });
             });
 
@@ -836,7 +834,6 @@
                 const correctName = c_name.toLowerCase();
                 let isCorrect = (guess === correctName);
                 if (!isCorrect) {
-                    console.log('loop')
                     for (const acronym in acronymList) {
                         if (guess === acronymList[acronym].toLowerCase() && 
                         acronym === correctName)
@@ -848,8 +845,6 @@
                 }
 
                 if (isCorrect) {
-                    console.log("CORRECT");
-
                     inputText.classList.add("correct-flash");
 
                     drawDeath(true);
@@ -859,7 +854,6 @@
                     return;
                 }
 
-                console.log("INCORRECT");
                 inputText.classList.add("incorrect-flash");
                 score -= 5;
                 playGuessSound(false);
